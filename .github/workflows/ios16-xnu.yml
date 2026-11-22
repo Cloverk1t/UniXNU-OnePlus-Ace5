@@ -64,6 +64,8 @@ jobs:
           repository: xyyyds0106/ios-vermeer-lab
           ref: d68e05df683f863f054b0f9c063c54d2b1342b2a
           path: reference
+      - name: Apply waffle vermeer deltas
+        run: python3 scripts/waffle-reference.py reference
       - name: Prepare pinned Wi-Fi host test dependencies
         env:
           BEARSSL_PIN: 7bea48e5e850ab4cafbe68d3765cdaba13a86d6f
@@ -263,7 +265,7 @@ jobs:
           sudo apt-get install -y build-essential git python3-venv clang llvm lld uuid-dev nasm gcc-aarch64-linux-gnu acpica-tools device-tree-compiler mono-devel ca-certificates-mono mtools
       - name: Make matching FAT payload
         run: |
-          python3 scripts/make-ios16-payload.py --kernel kernel-artifact/profile/kernel.macho --adt kernel-artifact/profile/giulia-ios16.adt --out "$RUNNER_TEMP/ios16-payload"
+          python3 scripts/make-ios16-payload.py --kernel kernel-artifact/profile/kernel.macho --adt kernel-artifact/profile/giulia-ios16.adt --root-report ios16/root-image.json --default-root --out "$RUNNER_TEMP/ios16-payload"
           python3 scripts/verify-payload.py "$RUNNER_TEMP/ios16-payload"
       - name: Build iOS16 UEFI with this payload identity
         run: |
