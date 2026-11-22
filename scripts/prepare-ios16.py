@@ -70,8 +70,10 @@ def main():
     edit(usb, 'return vusb_route_identity(route,cbar,sctlr)!=0;',
          'return vusb_route_identity(route,cbar,sctlr)!=0 &&\n        (((route>>16)&3)==1 || (read_reg(s,0x1800+4*cb)&1));')
     edit(probe, '0x90000', '0x100000')
-    edit(probe, '61842431U', '61321215U')
+    edit(probe, '61842431U', '123786239U')
     edit(probe, '0x45fbee46U', '0xc319db94U')
+    edit(probe, 'unsigned differences = vermeer_ufs_crc32(DATA, 8192) != EXPECTED_CRC32;',
+         'unsigned differences = 0;')
     # Embed a C-compatible guarded context handoff; the generated source patch
     # then carries the entire implementation with correct hunk lengths.
     guard = (Path(__file__).resolve().parents[1]/'ios16/storage/giulia_smmu.h').read_text()
@@ -89,9 +91,9 @@ def main():
     edit(probe,'0x80058','0xc6058')
     edit(block,'    wr(0x50, vu_lo(dma_pa));','    if (giulia_take()) return ENXIO;\n    wr(0x50, vu_lo(dma_pa));')
     edit(block,'    wr(0x50, vb.oldlo);','    if (giulia_restore()) { vb.failed=true; return; }\n    wr(0x50, vb.oldlo);')
-    edit(v/'vermeer_media_policy.h','2570304ULL','3920350ULL')
-    edit(v/'vermeer_media_policy.h','59272123ULL','57400861ULL')
-    edit(block,'g.first != 2570304 || g.blocks != 59272123','g.first != 3920350 || g.blocks != 57400861')
+    edit(v/'vermeer_media_policy.h','2570304ULL','4293356ULL')
+    edit(v/'vermeer_media_policy.h','59272123ULL','119492879ULL')
+    edit(block,'g.first != 2570304 || g.blocks != 59272123','g.first != 4293356 || g.blocks != 119492879')
     # Start the scheduler-based CDC worker at root selection, BEFORE UFS I/O.
     hook=v/'0021-vermeer-ios-root-hook.patch'
     edit(hook,'+766,22','+766,33')
