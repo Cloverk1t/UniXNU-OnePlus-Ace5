@@ -1,0 +1,7 @@
+name: hello-macos
+on: workflow_dispatch
+jobs:
+  hi:
+    runs-on: macos-latest
+    steps:
+      - run: sw_vers
