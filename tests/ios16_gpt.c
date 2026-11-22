@@ -11,7 +11,7 @@ int main(int argc,char **argv) {
  assert(vg_header(data+4096,61321215,&g)==0);
  assert(g.entries_bytes==4096 && g.entries_lba==2);
  assert(vg_userdata(data+8192,&g)==0);
- assert(g.first==3920350 && g.blocks==57400861);
+ assert(g.first==4293356 && g.blocks==119492879);
  data[8192+4095]^=1;
  assert(vg_userdata(data+8192,&g)!=0);
  return 0;

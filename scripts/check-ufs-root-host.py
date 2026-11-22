@@ -43,10 +43,10 @@ int main(int argc, char **argv) {
   std::ifstream image(argv[2], std::ios::binary);
   image.read(reinterpret_cast<char *>(manifest), sizeof(manifest));
   assert(image.gcount() == sizeof(manifest));
-  userdata=3920350;
+  userdata=4293356;
   RootLayout layout; const char *why=nullptr;
   assert(findRootLayout(&layout, &why));
-  assert(layout.userdataFirst == 3920350 && layout.userdataLast == 61321210);
+  assert(layout.userdataFirst == 4293356 && layout.userdataLast == 123786234);
   assert(layout.manifestStatus == 0 && layout.windows == 2);
   assert(layout.imageBytes == 9382658048ULL);
   puts("PASS: captured PKG110 GPT CRCs and actual system manifest; no synthetic GPT or device I/O");

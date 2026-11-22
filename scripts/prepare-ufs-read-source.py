@@ -50,7 +50,7 @@ extern "C" void giulia_ufs_read_root(void) {
   if (!findRootLayout(&layout, &why)) rootDiagnosticFailure(why);
   gRootDiagnostic.manifest = layout.manifestStatus;
   if (layout.manifestStatus || layout.windows != 2 ||
-      layout.userdataFirst != 3920350 || layout.userdataLast != 61321210)
+      layout.userdataFirst != 4293356 || layout.userdataLast != 123786234)
     rootDiagnosticFailure("unexpected PKG110 GPT or SHNGROOT manifest");
   uint32_t signatures[2] = {};
   for (unsigned i=0; i<2; ++i) {
