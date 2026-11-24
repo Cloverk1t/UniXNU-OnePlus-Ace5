@@ -119,7 +119,7 @@ class Screen(unittest.TestCase):
             self.assertFalse(wire.errors)
 
     def test_dimension_caps_and_malformed_header_are_bounded(self):
-        for width, height, flags, size in ((1265, 1, 0, 2), (1, 2781, 0, 2), (2, 1, 3, 4), (2, 1, 0, 1025)):
+        for width, height, flags, size in ((1441, 1, 0, 2), (1, 3169, 0, 2), (2, 1, 3, 4), (2, 1, 0, 1025)):
             header = screen.HEADER.pack(screen.MAGIC, 1, flags, width, height, width * height * 2,
                                         0, size, 0, 0, 0)
             header = header[:40] + struct.pack('<I', binascii.crc32(header[8:40]))
@@ -147,8 +147,8 @@ class Screen(unittest.TestCase):
     def test_png_accepts_configured_size_and_rejects_out_of_bounds_pixels(self):
         png = screen.rgb565_png(1024, 1, b'\0\xf8' * 1024)
         self.assertEqual(struct.unpack_from('>II', png, 16), (1024, 1))
-        for width, height, pixels in ((1265, 1, b'\0\0' * 1265),
-                                      (1, 2781, b'\0\0' * 2781),
+        for width, height, pixels in ((1441, 1, b'\0\0' * 1441),
+                                      (1, 3169, b'\0\0' * 3169),
                                       (1024, 1, b'\0\0' * 1023),
                                       (0, 1, b'')):
             with self.subTest(width=width, height=height), self.assertRaises(ValueError):
@@ -280,8 +280,8 @@ class Screen(unittest.TestCase):
         for offset in range(0, len(data), 257):
             text, complete = wire.feed(data[offset:offset + 257]); logs.extend(text); frames.extend(complete)
         self.assertEqual(len(frames), 1)
-        self.assertEqual(frames[0][:4], (7, 0, 316, 695))
-        self.assertEqual(frames[0][4], bytes((i * 17 + 23) & 255 for i in range(316 * 695 * 2)))
+        self.assertEqual(frames[0][:4], (7, 0, 360, 792))
+        self.assertEqual(frames[0][4], bytes((i * 17 + 23) & 255 for i in range(360 * 792 * 2)))
         self.assertTrue(logs.startswith(b'kernel before\n') and logs.endswith(b'kernel after\n'))
         self.assertNotIn(screen.MAGIC, logs)
         self.assertEqual(wire.errors, 0)

@@ -68,7 +68,7 @@ if len(sys.argv)==2:
     actual_digest=hashlib.sha256(actual).digest()
     markers=(actual_digest+b'GIULIA GPU: host preparation complete;\0'
              b'GIULIA GPU: firmware pack mapped read-only and digest verified\0'
-             b'GIULIA FB: native panel 1264x2780 full coverage;\0')
+             b'GIULIA FB: native panel 1440x3168 full coverage;\0')
     bound=bytearray(kernel);bound[0x1000:0x1000+len(markers)]=markers
     binary,firmware=append(bytes(bound),actual,actual_digest)
     metadata={'gpu_runtime_included':True,'gpu_firmware':firmware}

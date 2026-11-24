@@ -71,9 +71,7 @@ def main():
          'return vusb_route_identity(route,cbar,sctlr)!=0 &&\n        (((route>>16)&3)==1 || (read_reg(s,0x1800+4*cb)&1));')
     edit(probe, '0x90000', '0x100000')
     edit(probe, '61842431U', '123786239U')
-    edit(probe, '0x45fbee46U', '0xc319db94U')
-    edit(probe, 'unsigned differences = vermeer_ufs_crc32(DATA, 8192) != EXPECTED_CRC32;',
-         'unsigned differences = 0;')
+    edit(probe, '0x45fbee46U', '0xb9fdad28U')
     # Embed a C-compatible guarded context handoff; the generated source patch
     # then carries the entire implementation with correct hunk lengths.
     guard = (Path(__file__).resolve().parents[1]/'ios16/storage/giulia_smmu.h').read_text()
@@ -95,10 +93,18 @@ def main():
     edit(v/'vermeer_media_policy.h','59272123ULL','119492879ULL')
     edit(block,'g.first != 2570304 || g.blocks != 59272123','g.first != 4293356 || g.blocks != 119492879')
     # Start the scheduler-based CDC worker at root selection, BEFORE UFS I/O.
+    # Also support zero-write USB Bulk host-backed root (rd=waffleusb0) and selftest (waffle_usbblk_test=1).
     hook=v/'0021-vermeer-ios-root-hook.patch'
-    edit(hook,'+766,22','+766,33')
+    edit(hook,'+766,22','+766,57')
     edit(hook,'+\t\tint error = vermeer_ufs_ios_rootdev(root);',
          '+\t\textern void vermeer_usb_debug_start(void);\n+\t\tvermeer_usb_debug_start();\n'
+         '+\t\tint usbblk_test = 0;\n'
+         '+\t\tPE_parse_boot_argn("waffle_usbblk_test", &usbblk_test, sizeof(usbblk_test));\n'
+         '+\t\tif (usbblk_test == 1) {\n'
+         '+\t\t\textern int waffle_usbblk_selftest(void);\n'
+         '+\t\t\tint test_err = waffle_usbblk_selftest();\n'
+         '+\t\t\tIOLog("WAFFLE USBBLK: selftest result %d; USB console remains active\\n", test_err);\n'
+         '+\t\t\tfor (;;) IOSleep(1000);\n+\t\t}\n'
          '+\t\tint giulia_probe = 0;\n+\t\tPE_parse_boot_argn("giulia_ufs_probe", &giulia_probe, sizeof(giulia_probe));\n'
          '+\t\tif (giulia_probe == 1) {\n+\t\t\textern int vermeer_ufs_probe(void);\n'
          '+\t\t\tint probe_error = vermeer_ufs_probe();\n'
@@ -106,6 +112,23 @@ def main():
          '+\t\t\t/* Keep the scheduler alive for CDC enumeration after a failed read. */\n'
          '+\t\t\tfor (;;) IOSleep(1000);\n+\t\t}\n'
          '+\t\tint error = vermeer_ufs_ios_rootdev(root);')
+    edit(hook,'+\t\tgoto iofrootx;\n+\t}\n+#endif',
+         '+\t\tgoto iofrootx;\n+\t}\n'
+         '+\tif (strcmp(rdBootVar, "waffleusb0") == 0) {\n'
+         '+\t\textern void vermeer_usb_debug_start(void);\n'
+         '+\t\textern int waffle_usbblk_ios_rootdev(dev_t *dev);\n'
+         '+\t\tOSSafeReleaseNULL(matching);\n'
+         '+\t\tIOLog("WAFFLE USBBLK: selecting zero-write USB host root (UFS untouched)\\n");\n'
+         '+\t\tvermeer_usb_debug_start();\n'
+         '+\t\tint error = waffle_usbblk_ios_rootdev(root);\n'
+         '+\t\tif (error) {\n'
+         '+\t\t\tIOLog("WAFFLE USBBLK: host root unavailable (%d); USB console remains active\\n", error);\n'
+         '+\t\t\tfor (;;) IOSleep(1000);\n'
+         '+\t\t}\n'
+         '+\t\tstrlcpy(rootName, rdBootVar, rootNameSize);\n'
+         '+\t\tIOLog("BSD root: %s, major %d, minor %d\\n", rootName, major(*root), minor(*root));\n'
+         '+\t\t*oflags = 0;\n'
+         '+\t\tgoto iofrootx;\n+\t}\n+#endif')
     if a.gui:
         edit(usb,'static void command_line(void)','extern int sweet_sample_request(void);\nstatic void command_line(void)')
         edit(usb,'    else if (!strcmp(u.command,"status"))',
@@ -114,25 +137,72 @@ def main():
         edit(usb,'help/status/ping/replay','help/status/ping/replay/sample')
         edit(usb,'commands help status ping replay;','commands help status ping replay sample;')
     terminal_sources(usb, block, edit, wifi=a.wifi, gui=a.gui, gpu=a.gpu, audio=a.audio, modem=a.modem)
+    # Attach zero-write USB Bulk host-backed block transport (opt-in via waffle_usbblk=1 or rd=waffleusb0).
+    repo_root = Path(__file__).resolve().parents[1]
+    usb_proto = v / 'vermeer_usb_protocol.h'
+    edit(usb_proto, 'index<=1 && !value && !len) return VUSB_INTERFACE;',
+         'index<=2 && !value && !len) return VUSB_INTERFACE;')
+    edit(usb_proto, 'index<=1 && !value && len==1) return VUSB_GET_INTERFACE;',
+         'index<=2 && !value && len==1) return VUSB_GET_INTERFACE;')
+    edit(usb_proto, '(index==1 || index==0x81 || index==0x82)) return VUSB_CLEAR_HALT;',
+         '(index==1 || index==0x81 || index==0x82 || index==3 || index==0x83)) return VUSB_CLEAR_HALT;')
+    wub_proto_src = (repo_root / 'ios16/storage/giulia_storage_usbblk_proto.h').read_text()
+    wub_proto_src = wub_proto_src.replace('#include <stdint.h>\n', '').replace('#include <stddef.h>\n', '')
+    wub_dwc3_src = (repo_root / 'ios16/storage/giulia_storage_usbblk_dwc3.inc').read_text().replace(
+        '/* GIULIA_USBBLK_PROTO is embedded here by the profile generator. */', wub_proto_src)
+    wub_dev_src = (repo_root / 'ios16/storage/giulia_storage_usbblk_dev.inc').read_text().replace(
+        '/* GIULIA_USBBLK_PROTO is embedded here by the profile generator. */', wub_proto_src)
+    edit(usb, 'static const unsigned trb_off[6]={0x1000,0x1040,0x1080,0x10c0,0x1100,0x1140};',
+         'static const unsigned trb_off[8]={0x1000,0x1040,0x1080,0x10c0,0x1100,0x1140,0,0};')
+    edit(usb, 'unsigned resource[6], requested[6];', 'unsigned resource[8], requested[8];')
+    edit(usb, 'bool busy[6], failed, configured, dtr, notify;', 'bool busy[8], failed, configured, dtr, notify;')
+    edit(usb, 'if (u.failed || ep>=6) return -1;', 'if (u.failed || ep>=8) return -1;')
+    edit(usb, 'for (unsigned ep=2;ep<6;ep++) {', 'for (unsigned ep=2;ep<8;ep++) {')
+    edit(usb, 'static void stop_data(void)', wub_dwc3_src + '\nstatic void stop_data(void)')
+    edit(usb, 'u.configured=false; u.dtr=false; u.notify=false;',
+         'u.configured=false; u.dtr=false; u.notify=false;\n    wub_abort();')
+    edit(usb, 'wr(DALEPENA,3|(1u<<2)|(1u<<3)|(1u<<5));',
+         'wr(DALEPENA,3|(1u<<2)|(1u<<3)|(1u<<5));\n    if (wub_configure_eps()) return;')
+    edit(usb, 'case 1: if (value&255) break;memcpy(data,vusb_device,sizeof(vusb_device));n=sizeof(vusb_device);break;',
+         'case 1: if (value&255) break;'
+         'if (waffle_usbblk_enabled()) { memcpy(data,wub_device_desc,sizeof(wub_device_desc));n=sizeof(wub_device_desc); }'
+         'else { memcpy(data,vusb_device,sizeof(vusb_device));n=sizeof(vusb_device); }break;')
+    edit(usb, 'memcpy(data,vusb_config,sizeof(vusb_config));n=sizeof(vusb_config);',
+         'if (waffle_usbblk_enabled()) { memcpy(data,wub_config_desc,sizeof(wub_config_desc));n=sizeof(wub_config_desc); }'
+         'else { memcpy(data,vusb_config,sizeof(vusb_config));n=sizeof(vusb_config); }')
+    edit(usb, 'case 6:if (!(value&255)) { memcpy(data,vusb_qualifier,sizeof(vusb_qualifier));n=sizeof(vusb_qualifier); }break;',
+         'case 6:if (!(value&255)) {'
+         'if (waffle_usbblk_enabled()) { memcpy(data,wub_qualifier_desc,sizeof(wub_qualifier_desc));n=sizeof(wub_qualifier_desc); }'
+         'else { memcpy(data,vusb_qualifier,sizeof(vusb_qualifier));n=sizeof(vusb_qualifier); } }break;')
+    edit(usb, '    if (type==1) {\n        int n=complete(ep);',
+         '    if (type==1) {\n        if (ep==6 || ep==7) { wub_on_complete(ep,status); return; }\n        int n=complete(ep);')
+    edit(usb, '        transmit();\n        uint64_t deadline;clock_interval_to_deadline(1,NSEC_PER_MSEC,&deadline);',
+         '        transmit();\n        int wub_active=wub_poll();\n'
+         '        uint64_t deadline;clock_interval_to_deadline(wub_active?50:1000,NSEC_PER_USEC,&deadline);')
+    edit(usb, '    gs_disconnect();gscreen_disconnect();\n    wr(DEVTEN,0);',
+         '    wub_abort();gs_disconnect();gscreen_disconnect();\n    wr(DEVTEN,0);')
+    edit(usb, '    vm_offset_t qs=ml_io_map(0xa6f8800,0x100);',
+         '    wub_init_dma(width);\n    vm_offset_t qs=ml_io_map(0xa6f8800,0x100);')
+    edit(block, '    *dev = makedev(vb.bmajor, 0); return 0;\n}\n#endif\n#endif',
+         '    *dev = makedev(vb.bmajor, 0); return 0;\n}\n' + wub_dev_src + '\n#endif\n#endif')
     sys.argv = [str(a.reference/'tools/prepare_vermeer.py'),str(a.work/'patches'),str(a.out),'--ios-gui' if a.gui else '--ios']
     runpy.run_path(sys.argv[0], run_name='__main__')
     for path in a.out.glob('*.patch'):
         text=path.read_text(errors='surrogateescape')
-        for old,new in [('0xb8000000','0xd5100000'),('1440u','1264u'),('3200u','2780u'),
-                        ('5760','5056'),('3168','2748'),('arm,cortex-a510','qcom,kryo'),('VERMEER USB:','GIULIA USB:'),
+        for old,new in [('0xb8000000','0xd5100000'),('3168','3136'),('3200u','3168u'),
+                        ('arm,cortex-a510','qcom,kryo'),('VERMEER USB:','GIULIA USB:'),
                         ('xiaomi,sweet','oneplus,giulia'),
                         ('strlcpy(name, "sweet",','strlcpy(name, "giulia",'),
-                        ('strlcpy(name, "Redmi Note 10 Pro",','strlcpy(name, "OnePlus Ace 5",')]:
+                        ('strlcpy(name, "Redmi Note 10 Pro",','strlcpy(name, "OnePlus 12",')]:
             text=text.replace(old,new)
         if a.gui:
             # Rewrite added, removed and context lines alike so the complete
             # display patch series still applies atomically. These standalone
             # decimal constants describe the reference panel/HID coordinates.
-            text=re.sub(r'\b1440\b','1264',text)
-            text=re.sub(r'\b3200\b','2780',text)
-            text=text.replace('1440x3200','1264x2780').replace('VERMEER FB:','GIULIA FB:')
-            text=text.replace('x > 1439 ? 1439','x > 1263 ? 1263').replace('y > 3199 ? 3199','y > 2779 ? 2779')
-            text=text.replace('K70 framebuffer','Ace 5 framebuffer').replace('K70 panel','Ace 5 panel')
+            text=re.sub(r'\b3200\b','3168',text)
+            text=text.replace('1440x3200','1440x3168').replace('VERMEER FB:','GIULIA FB:')
+            text=text.replace('y > 3199 ? 3199','y > 3167 ? 3167')
+            text=text.replace('K70 framebuffer','OnePlus 12 framebuffer').replace('K70 panel','OnePlus 12 panel')
         path.write_text(text,errors='surrogateescape')
     # Shared ARM cache-attribute path, used by both Wi-Fi and display buffers.
     # Ace 5 RAM lives above 4 GiB: widen ppnum_t before the physical-page shift.
@@ -197,9 +267,9 @@ def main():
         shutil.copyfile(a.debug_userland,a.out/'debug-userland.json')
     checker=(a.reference/'tools/check_ios_kernel.py').read_text().replace('K70DBG004','ACE5DBG001').replace('VERMEER USB:','GIULIA USB:')
     if a.gui:
-        checker=checker.replace('VERMEER FB:','GIULIA FB:').replace('1440x3200','1264x2780')
-        checker=checker.replace('logical canvas 1125x2436 centered in 1264x2780',
-                                'native panel 1264x2780 full coverage; UIKit canvas 1125x2436')
+        checker=checker.replace('VERMEER FB:','GIULIA FB:').replace('1440x3200','1440x3168')
+        checker=checker.replace('logical canvas 1125x2436 centered in 1440x3168',
+                                'native panel 1440x3168 full coverage; UIKit canvas 1125x2436')
     (a.out/'check-kernel.py').write_text(checker)
     # A Windows working copy can contain CRLF even when Git stores LF. Copied
     # profile patches/scripts must match the Linux/macOS source they apply to.
@@ -208,14 +278,14 @@ def main():
         if generated.suffix in ('.patch', '.sh'):
             raw=generated.read_bytes()
             if b'\r\n' in raw:generated.write_bytes(raw.replace(b'\r\n',b'\n'))
-    (a.out/'profile.json').write_text(json.dumps({'device':'OnePlus Ace 5 PKG110',
+    (a.out/'profile.json').write_text(json.dumps({'device':'OnePlus 12 PJD110 (waffle)',
         'usb_terminal_protocol':2,
         'high_physical_cache_sync_fix':True,
         'debug_userland_trust_included':bool(debug_trust),
         'usb_terminal_host':'debug-terminal.cmd',
         'usb_terminal_hardware_tested':False,
         'screen_forwarding_included':a.gui,
-        'screen_forwarding_protocol':'GSC1 RGB565_LE up to 1264x2780, bounded CRC chunks, configurable max_size/max_fps' if a.gui else None,
+        'screen_forwarding_protocol':'GSC1 RGB565_LE up to 1440x3168, bounded CRC chunks, configurable max_size/max_fps' if a.gui else None,
         'screen_remote_input_included':a.gui,
         'screen_remote_input_protocol':'normalized touch, USB HID keyboard/modifiers and consumer buttons, 3-second release lease' if a.gui else None,
         'profile':'gui' if a.gui else 'base','requires_local_gui_adt':a.gui,
@@ -236,7 +306,7 @@ def main():
         'wifi_scope':'PCIe, MHI, QRTR/QMI, CE/HTC/WMI passive scan, IO80211 single-station open/WPA2-CCMP and TCL/REO Ethernet; hardware networking unverified' if a.wifi else None,
         'read_only_trust_catalog_query':a.gui,
         'complete_boot_logging_available':a.gui,
-        'native_panel':{'width':1264,'height':2780,'stride':5056,
+        'native_panel':{'width':1440,'height':3168,'stride':5760,
                         'presentation':'full-panel','touch':'full-panel normalized',
                         'uikit_canvas':[1125,2436]} if a.gui else None,
         'hardware_tested':False},indent=2)+'\n')

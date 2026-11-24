@@ -13,7 +13,7 @@ def check_runtime(kernel, report):
         return None
     if not report.get('gpu_runtime_included') or not report.get('gpu_firmware'):
         raise ValueError('GPU kernel requires verified local firmware embedding')
-    if b'GIULIA FB: native panel 1264x2780 full coverage;' not in kernel:
+    if b'GIULIA FB: native panel 1440x3168 full coverage;' not in kernel:
         raise ValueError('GPU/display integration kernel mismatch')
     if b'GIULIA GPU: firmware pack mapped read-only and digest verified' not in kernel:
         raise ValueError('GPU kernel lacks the explicit firmware RAM mapping')

@@ -36,12 +36,12 @@ static int accept(uint64_t fPhys,uint32_t fWidth,uint32_t fHeight,uint32_t fRowB
  return !('''+expr+''');
 }
 int main(void) {
- assert(accept(0xd5100000,1264,2780,5056));
+ assert(accept(0xd5100000,1440,3168,5760));
  assert(!accept(0xb8000000,1440,3200,5760));
- assert(!accept(0xd5100001,1264,2780,5056));
- assert(!accept(0xd5100000,1440,2780,5056));
- assert(!accept(0xd5100000,1264,3200,5056));
- assert(!accept(0xd5100000,1264,2780,5760));
+ assert(!accept(0xd5100001,1440,3168,5760));
+ assert(!accept(0xd5100000,1264,3168,5760));
+ assert(!accept(0xd5100000,1440,3200,5760));
+ assert(!accept(0xd5100000,1440,3168,5056));
  assert(!accept(0xd5100000,0,0,0));
  assert(!accept(UINT64_MAX,UINT32_MAX,UINT32_MAX,UINT32_MAX));
  return 0;
@@ -59,8 +59,8 @@ int main(void) {
     assert chosen['dram-base']==chosen['dram-size']==bytes(8)
     assert struct.unpack('<I',chosen['display-scale'])[0]==3
     fb=nodes['/device-tree/sweet-fbcon']
-    assert struct.unpack('<QQ',fb['reg'])==(0xd5100000,5056*2780)
-    assert [struct.unpack('<I',fb[k])[0] for k in ['width','height','stride']]==[1264,2780,5056]
+    assert struct.unpack('<QQ',fb['reg'])==(0xd5100000,5760*3168)
+    assert [struct.unpack('<I',fb[k])[0] for k in ['width','height','stride']]==[1440,3168,5760]
     disp=nodes['/device-tree/arm-io/disp0']
     assert disp['device_type']==b'display-subsystem\0'
     assert [struct.unpack('<I',disp[k])[0] for k in ['canvas-width','canvas-height']]==[1125,2436]

@@ -35,7 +35,7 @@
     </div>
     <aside class="inspector" id="inspector" aria-label="投屏设置">
       <h2 class="section-title">画面设置</h2>
-      <div class="setting"><label for="size">分辨率 · 最长边</label><select id="size"><option value="480">480 px · 节省带宽</option><option value="695" selected>695 px · 默认</option><option value="960">960 px</option><option value="1280">1280 px</option><option value="1920">1920 px</option><option value="2780">2780 px · 原生上限</option><option value="custom">自定义…</option></select><div class="custom" id="customSize" hidden><input id="maxSize" type="number" min="160" max="2780" value="695" step="1" aria-label="最长边像素"><span style="align-self:center;color:var(--muted)">px</span></div></div>
+      <div class="setting"><label for="size">分辨率 · 最长边</label><select id="size"><option value="480">480 px · 节省带宽</option><option value="792" selected>792 px · 默认</option><option value="960">960 px</option><option value="1280">1280 px</option><option value="1920">1920 px</option><option value="3168">3168 px · 原生上限</option><option value="custom">自定义…</option></select><div class="custom" id="customSize" hidden><input id="maxSize" type="number" min="160" max="3168" value="792" step="1" aria-label="最长边像素"><span style="align-self:center;color:var(--muted)">px</span></div></div>
       <div class="setting"><label for="fps">目标帧率上限</label><select id="fps"><option value="1">1 FPS · 默认</option><option value="2">2 FPS</option><option value="5">5 FPS</option><option value="10">10 FPS</option><option value="15">15 FPS</option><option value="30">30 FPS</option></select></div>
       <button id="apply" style="width:100%">应用设置</button>
       <p class="hint">保持手机画面比例。USB 原始像素传输的实际帧率取决于分辨率和带宽，目标值不是实测帧率。</p>
@@ -266,7 +266,7 @@ $('size').onchange=()=>{$('customSize').hidden=$('size').value!=='custom';settin
 $('maxSize').oninput=$('fps').onchange=()=>{settingsDirty=true;};
 $('apply').onclick=async()=>{
   const max_size=Number($('size').value==='custom'?$('maxSize').value:$('size').value),max_fps=Number($('fps').value);
-  if(!Number.isInteger(max_size)||max_size<160||max_size>2780) {message('最长边请填写 160–2780 之间的整数。',true);$('maxSize').focus();return;}
+  if(!Number.isInteger(max_size)||max_size<160||max_size>3168) {message('最长边请填写 160–3168 之间的整数。',true);$('maxSize').focus();return;}
   await release();
   const result=await operate({action:'configure',max_size,max_fps});
   if(result) {settingsDirty=false;toast('设置请求已排队，收到新帧后显示新的分辨率。');}

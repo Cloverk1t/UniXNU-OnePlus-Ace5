@@ -6,11 +6,11 @@
 #define GIULIA_SCREEN_H
 #include <stdint.h>
 #include <stddef.h>
-#define GSC_WIDTH 316u
-#define GSC_HEIGHT 695u
+#define GSC_WIDTH 360u
+#define GSC_HEIGHT 792u
 #define GSC_FRAME_BYTES (GSC_WIDTH*GSC_HEIGHT*2u)
-#define GSC_MAX_WIDTH 1264u
-#define GSC_MAX_HEIGHT 2780u
+#define GSC_MAX_WIDTH 1440u
+#define GSC_MAX_HEIGHT 3168u
 #define GSC_MAX_FRAME_BYTES (GSC_MAX_WIDTH*GSC_MAX_HEIGHT*2u)
 #define GSC_HEADER_BYTES 44u
 #define GSC_CHUNK_BYTES 1024u

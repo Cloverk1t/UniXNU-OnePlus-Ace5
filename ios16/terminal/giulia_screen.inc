@@ -10,7 +10,7 @@ static struct {
     uint32_t id,offset,crc;
     uint64_t next_ms;
     unsigned live,requested,active,snapshot,yield_log,control,width,height,bytes,max_size,max_fps;
-} gscreen={.max_size=695,.max_fps=1};
+} gscreen={.max_size=792,.max_fps=1};
 static uint64_t gscreen_now(void)
 {uint64_t ns=0;absolutetime_to_nanoseconds(mach_absolute_time(),&ns);return ns/1000000;}
 static void gscreen_disconnect(void)
@@ -30,9 +30,9 @@ static int gscreen_command(const char *cmd)
     if(!gs_enabled()) {printf("GIULIA SCREEN: requires giulia_debug=1\n");return 1;}
     if(!strncmp(cmd,"screen.configure",16)) {
         const char *p=cmd+16;unsigned max_size,max_fps;
-        if(*p!=' ' || !ginput_uint(&p,2780,&max_size) || max_size<160 ||
+        if(*p!=' ' || !ginput_uint(&p,3168,&max_size) || max_size<160 ||
            !ginput_uint(&p,30,&max_fps) || !max_fps || !ginput_end(p)) {
-            printf("GIULIA SCREEN: rejected=invalid-config max_size=160..2780 max_fps=1..30\n");return 1;
+            printf("GIULIA SCREEN: rejected=invalid-config max_size=160..3168 max_fps=1..30\n");return 1;
         }
         gscreen.max_size=max_size;gscreen.max_fps=max_fps;gscreen.next_ms=0;
         printf("GIULIA SCREEN: configured max_size=%u max_fps=%u width=%u height=%u format=RGB565_LE\n",

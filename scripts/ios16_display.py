@@ -35,14 +35,14 @@ def native_display_patch(profile: Path, repository: Path):
     fb = replace(fb, 'OSDefineMetaClassAndStructors(AppleCLCD, IOMobileFramebuffer);\n',
                  'OSDefineMetaClassAndStructors(AppleCLCD, IOMobileFramebuffer);\n\n'
                  '#include "giulia_screen_framebuffer.inc"\n')
-    fb = replace(fb, '\t/* Known UIKit layout, centered 1:1 inside the guarded Ace 5 panel. */\n'
+    fb = replace(fb, '\t/* Known UIKit layout, centered 1:1 inside the guarded OnePlus 12 panel. */\n'
                  '\tfOffX = (VERMEER_LOGICAL_W - (int32_t)fWidth) / 2;\n'
                  '\tfOffY = (VERMEER_LOGICAL_H - (int32_t)fHeight) / 2;\n',
                  '\tsetProperty("GiuliaNativeWidth", GD_WIDTH, 32);\n'
                  '\tsetProperty("GiuliaNativeHeight", GD_HEIGHT, 32);\n'
                  '\tsetProperty("GiuliaPresentation", "full-panel");\n')
-    fb = replace(fb, 'logical canvas 1125x2436 centered in 1264x2780',
-                 'native panel 1264x2780 full coverage; UIKit canvas 1125x2436')
+    fb = replace(fb, 'logical canvas 1125x2436 centered in 1440x3168',
+                 'native panel 1440x3168 full coverage; UIKit canvas 1125x2436')
     fb = replace(fb, '/* Clear the border once; all writes stay inside the guarded reservation. */',
                  '/* Clear stale console pixels before the first full-panel frame. */')
     fb = replace(fb, '\tfVsync->setTimeoutUS(SWEET_FB_VSYNC_US);\n',
@@ -78,7 +78,7 @@ def native_display_patch(profile: Path, repository: Path):
     fb = fb.replace('/* Copy each enabled layer\'s surface into the panel memory (no scaling). */',
                     '/* Present enabled layers over the native panel using the shared bounded transform. */')
     hid = replace(hid, '\t/* Translate physical panel coordinates into the centered UIKit canvas. */\n'
-                  '\tint32_t lx = x - (1264 - 1125) / 2, ly = y - (2780 - 2436) / 2;\n'
+                  '\tint32_t lx = x - (1440 - 1125) / 2, ly = y - (3168 - 2436) / 2;\n'
                   '\tlx = lx < 0 ? 0 : (lx > 1124 ? 1124 : lx);\n'
                   '\tly = ly < 0 ? 0 : (ly > 2435 ? 2435 : ly);\n'
                   '\tIOFixed nx = (IOFixed)(((int64_t)lx << 16) / 1125);\n'

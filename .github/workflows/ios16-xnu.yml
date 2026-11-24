@@ -128,6 +128,9 @@ jobs:
           /tmp/trust-test < /dev/null
           clang -std=c11 -Wall -Wextra -Werror -fsanitize=address,undefined tests/ios16_log_bytes.c -o /tmp/log-test
           /tmp/log-test
+          clang -std=c11 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all tests/ios16_usbblk.c -o /tmp/usbblk-test
+          /tmp/usbblk-test
+          clang -O2 -std=c11 -Wall -Wextra -Werror scripts/waffle_usbblk_host.c -framework IOKit -framework CoreFoundation -o /tmp/waffle-usbblk-host
           for test in ios16_wifi_pcie ios16_wifi_cesta ios16_wifi_bandwidth ios16_wifi_power_cache; do
             clang -std=c11 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all "tests/$test.c" -o /tmp/pcie-resource-check
             /tmp/pcie-resource-check
@@ -203,7 +206,7 @@ jobs:
           python3 profile/check-kernel.py dxb/fakeroot/System/Library/Kernels/kernel.development.sweet ${{ inputs.profile == 'gui' && '--gui' || '' }}
           python3 tests/ios16_platform_match.py --reference reference --kernel dxb/fakeroot/System/Library/Kernels/kernel.development.sweet
           python3 scripts/fix-ios16-high-physical-cache.py --kernel dxb/fakeroot/System/Library/Kernels/kernel.development.sweet --check
-          python3 -c "from pathlib import Path; b=Path('dxb/fakeroot/System/Library/Kernels/kernel.development.sweet').read_bytes(); assert all(m in b for m in (b'GIULIA SHELL: /dev/giulia-debug ready;',b'GIULIA REG: mapped slot=',b'GIULIA TERM: protocol=2'))"
+          python3 -c "from pathlib import Path; b=Path('dxb/fakeroot/System/Library/Kernels/kernel.development.sweet').read_bytes(); assert all(m in b for m in (b'GIULIA SHELL: /dev/giulia-debug ready;',b'GIULIA REG: mapped slot=',b'GIULIA TERM: protocol=2',b'WAFFLE USBBLK: composite bulk block armed;'))"
           if [ '${{ inputs.touch }}' = true ]; then
             python3 -c "from pathlib import Path; assert b'GIULIA TOUCH: controller result=' in Path('dxb/fakeroot/System/Library/Kernels/kernel.development.sweet').read_bytes()"
           fi
@@ -212,7 +215,7 @@ jobs:
             python3 -c "from pathlib import Path; b=Path('dxb/fakeroot/System/Library/Kernels/kernel.development.sweet').read_bytes(); assert all(m in b for m in (b'GIULIA KEYS: observer polling active',b'GIULIA KEYS: compiled=1',b'GIULIA SLIDER: compiled=1',b'keys.status',b'slider.status'))"
             python3 -c "from pathlib import Path; assert b'GIULIA AMFI: trust catalogue ready;' in Path('dxb/fakeroot/System/Library/Kernels/kernel.development.sweet').read_bytes()"
             python3 -c "from pathlib import Path; assert b'GIULIA LOG: launchd full activity/stderr logging enabled;' in Path('dxb/fakeroot/System/Library/Kernels/kernel.development.sweet').read_bytes()"
-            python3 -c "from pathlib import Path; assert b'GIULIA FB: native panel 1264x2780 full coverage;' in Path('dxb/fakeroot/System/Library/Kernels/kernel.development.sweet').read_bytes()"
+            python3 -c "from pathlib import Path; assert b'GIULIA FB: native panel 1440x3168 full coverage;' in Path('dxb/fakeroot/System/Library/Kernels/kernel.development.sweet').read_bytes()"
             python3 -c "from pathlib import Path; b=Path('dxb/fakeroot/System/Library/Kernels/kernel.development.sweet').read_bytes(); assert b'GIULIA SCREEN: panel capture lock unavailable' in b and b'GIULIA SCREEN: queued live=' in b"
           fi
           if [ '${{ inputs.wifi }}' = true ]; then
@@ -263,8 +266,8 @@ jobs:
           sudo apt-get install -y build-essential git python3-venv clang llvm lld uuid-dev nasm gcc-aarch64-linux-gnu acpica-tools device-tree-compiler mono-devel ca-certificates-mono mtools
       - name: Make matching FAT payload
         run: |
-          python3 scripts/make-ios16-payload.py --kernel kernel-artifact/profile/kernel.macho --adt kernel-artifact/profile/giulia-ios16.adt --root-report ios16/root-image.json --default-root --out "$RUNNER_TEMP/ios16-payload"
-          # waffle fork: payload verification is bypassed for the first UFS/GPT bring-up payload
+          python3 scripts/make-ios16-payload.py --kernel kernel-artifact/profile/kernel.macho --adt kernel-artifact/profile/giulia-ios16.adt --root-report ios16/root-image.json --default-root --root-ro --usb-entries --out "$RUNNER_TEMP/ios16-payload"
+          python3 scripts/verify-payload.py "$RUNNER_TEMP/ios16-payload"
       - name: Build iOS16 UEFI with this payload identity
         run: |
           set -o pipefail

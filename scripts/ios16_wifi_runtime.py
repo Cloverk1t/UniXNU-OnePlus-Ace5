@@ -13,7 +13,7 @@ def check_runtime(kernel, report):
         return None
     if not report.get('wifi_runtime_included') or not report.get('wifi_firmware'):
         raise ValueError('Wi-Fi kernel requires verified local firmware embedding')
-    if b'GIULIA FB: native panel 1264x2780 full coverage;' not in kernel:
+    if b'GIULIA FB: native panel 1440x3168 full coverage;' not in kernel:
         raise ValueError('Wi-Fi/display integration kernel mismatch')
     if b'GIULIA WIFI: firmware pack mapped read-only and digest verified' not in kernel:
         raise ValueError('Wi-Fi kernel lacks the explicit firmware RAM mapping')
@@ -49,7 +49,7 @@ def check_runtime(kernel, report):
     result = {'firmware': found, 'scan_transport': 'WCN7850 PCIe/MHI/QRTR/QMI/CE/HTC/WMI',
             'interface': 'iOS16 IO80211 en0', 'scan_mode': 'passive 2.4/5 GHz',
             'association_data_path': False, 'hardware_verified': False,
-            'display': {'native': [1264, 2780], 'canvas': [1125, 2436], 'presentation': 'full-panel'}}
+            'display': {'native': [1440, 3168], 'canvas': [1125, 2436], 'presentation': 'full-panel'}}
     # This versioned declaration belongs to gn_start. Classify the compiled
     # implementation only; a firmware payload cannot supply the declaration.
     # Retain the exact old report for existing scan-only kernels and bundles.

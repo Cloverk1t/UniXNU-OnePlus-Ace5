@@ -64,7 +64,7 @@ HELP = '''Device commands (new kernel needed except help/ping/status/replay/samp
   screen.start            live screen with mouse/keyboard controls in browser
   screen.stop             stop screen transfer (logs and commands continue)
   screen.snapshot         save a real framebuffer screenshot as PNG
-  screen.configure N FPS  maximum edge 160..2780, target FPS 1..30 (USB limited)
+  screen.configure N FPS  maximum edge 160..3168, target FPS 1..30 (USB limited)
   input.status            actual touch/keyboard/button service availability
   keys.status             cached physical key readings, delivery counters and errors
   slider.status           cached AK09970 state; worker is opt-in and requires gh=3
@@ -119,7 +119,7 @@ def wire_command(line):
             if valid:
                 values = [int(n) for n in numbers]
                 if command == 'screen.configure':
-                    valid = 160 <= values[0] <= 2780 and 1 <= values[1] <= 30
+                    valid = 160 <= values[0] <= 3168 and 1 <= values[1] <= 30
                 elif command == 'input.touch':
                     valid = words[1] in ('down','move','up','cancel') and all(0 <= n <= 65535 for n in values)
                 else:
@@ -653,13 +653,13 @@ def main():
     parser.add_argument('--seconds', type=float, default=20)
     parser.add_argument('--fastboot-serial', help='For reboot.fastboot: wait for this exact Fastboot device before success')
     parser.add_argument('--output', default=str(Path(__file__).resolve().parent / '../out/terminal'))
-    parser.add_argument('-m', '--max-size', type=int, help='Maximum mirrored edge, 160..2780; keeps panel aspect ratio')
+    parser.add_argument('-m', '--max-size', type=int, help='Maximum mirrored edge, 160..3168; keeps panel aspect ratio')
     parser.add_argument('--max-fps', type=int, help='Target capture rate, 1..30; actual rate depends on USB bandwidth')
     args = parser.parse_args()
     if not 1 <= args.seconds <= 86400:
         parser.error('--seconds must be 1..86400')
-    if args.max_size is not None and not 160 <= args.max_size <= 2780:
-        parser.error('--max-size must be 160..2780')
+    if args.max_size is not None and not 160 <= args.max_size <= 3168:
+        parser.error('--max-size must be 160..3168')
     if args.max_fps is not None and not 1 <= args.max_fps <= 30:
         parser.error('--max-fps must be 1..30')
     if (args.max_size is not None or args.max_fps is not None) and args.command not in ('screen.start','screen.snapshot'):

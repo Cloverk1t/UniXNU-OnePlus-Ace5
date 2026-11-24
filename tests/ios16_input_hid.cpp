@@ -61,7 +61,7 @@ int main()
     assert(keyboard.start(nullptr)); assert(giulia_remote_ready()==6);
     gSweetTouch=&touch; assert(giulia_remote_ready()==7);
     assert(giulia_remote_touch(1,65535,65535));
-    assert(touch.finger==10 && touch.down==1 && touch.x==1263 && touch.y==2779);
+    assert(touch.finger==10 && touch.down==1 && touch.x==1439 && touch.y==3167);
     assert(giulia_remote_touch(0,0,0) && touch.down==0 && touch.x==0 && touch.y==0);
     assert(!giulia_remote_touch(2,1,1) && !giulia_remote_touch(1,65536,1));
     assert(touch.count==2);

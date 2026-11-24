@@ -125,7 +125,7 @@ if report.get('gpu_mode')==3:
                          0xfffffe0007008000, 0x4000, 0x4000, 14, 0, 0, 0, 0, 0, 0)
         markers = (self.digests['wifi'] + b'GIULIA WIFI: PCIe/MHI/QMI/WMI ready;\0'
                    b'GIULIA WIFI: firmware pack mapped read-only and digest verified\0'
-                   b'GIULIA FB: native panel 1264x2780 full coverage;\0')
+                   b'GIULIA FB: native panel 1440x3168 full coverage;\0')
         if gpu:
             markers += (self.digests['gpu'] + b'GIULIA GPU: host preparation complete;\0'
                         b'GIULIA GPU: firmware pack mapped read-only and digest verified\0'

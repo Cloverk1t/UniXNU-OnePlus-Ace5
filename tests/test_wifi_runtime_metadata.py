@@ -26,7 +26,7 @@ def image(station=False, firmware_marker=False):
     struct.pack_into('<16s16sQQIIIIIIII', kernel, 104, b'__text', b'__TEXT',
                      0xfffffe0007008000, 0x4000, 0x4000, 14, 0, 0, 0, 0, 0, 0)
     markers = (b'GIULIA WIFI: PCIe/MHI/QMI/WMI ready;\0'
-               b'GIULIA FB: native panel 1264x2780 full coverage;\0'
+               b'GIULIA FB: native panel 1440x3168 full coverage;\0'
                b'GIULIA WIFI: firmware pack mapped read-only and digest verified\0') + digest
     if station:
         markers += STATION

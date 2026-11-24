@@ -1,15 +1,15 @@
 /* SPDX-License-Identifier: BSD-2-Clause-Patent
- * Ace 5 native panel presentation. UIKit keeps its supported D22 layout; every
- * logical pixel rectangle is mapped over the complete 1264x2780 panel. The
- * inverse HID transform is normalized over that same complete panel.
+ * OnePlus 12 (waffle) native panel presentation. UIKit keeps its supported D22
+ * layout; every logical pixel rectangle is mapped over the complete 1440x3168
+ * panel. The inverse HID transform is normalized over that same complete panel.
  */
 #ifndef GIULIA_DISPLAY_H
 #define GIULIA_DISPLAY_H
 #include <stdint.h>
 #include <stddef.h>
-#define GD_WIDTH 1264u
-#define GD_HEIGHT 2780u
-#define GD_STRIDE 5056u
+#define GD_WIDTH 1440u
+#define GD_HEIGHT 3168u
+#define GD_STRIDE 5760u
 #define GD_CANVAS_W 1125u
 #define GD_CANVAS_H 2436u
 struct gd_rect { int32_t x,y,w,h; };

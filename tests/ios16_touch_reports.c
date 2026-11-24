@@ -29,9 +29,9 @@ int main(void)
     struct gt_state s={0};struct gt_frame frame={0};
     assert(!gt_decode(0x11,data,7,20224,44480,1,&s,&frame));
     assert(s.active==1 && frame.count==1 && frame.events[0].down);
-    assert(frame.events[0].x==1263 && frame.events[0].y==2779);
+    assert(frame.events[0].x==1439 && frame.events[0].y==3167);
     data[0]=0;assert(!gt_decode(0x11,data,1,20224,44480,1,&s,&frame));
-    assert(!s.active && frame.count==1 && !frame.events[0].down && frame.events[0].x==1263);
+    assert(!s.active && frame.count==1 && !frame.events[0].down && frame.events[0].x==1439);
     data[0]=1;contact(data+1,9,2,0,0);
     assert(!gt_decode(0x11,data,7,20224,44480,1,&s,&frame));
     assert(s.active==(1<<9) && frame.count==1 && frame.events[0].id==9);

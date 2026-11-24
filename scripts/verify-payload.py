@@ -118,7 +118,8 @@ with tempfile.TemporaryDirectory() as directory:
     if report.get('root_finder_id'):
         roots=[e for e in config['entry'] if e['id']=='ios16']
         expected=report['kernel_args'].replace(' giulia_ufs_probe=1','')
-        expected+=' vermeer_ufs_rw=1 vermeer_root_uuid='+report['root_finder_id']
+        rw_flag='0' if report.get('root_readonly') else '1'
+        expected+=f' vermeer_ufs_rw={rw_flag} vermeer_root_uuid='+report['root_finder_id']
         if report.get('ios_platform_launch_compat'):
             expected+=' unentitled_ios_sim_launch=1'
             if b'unentitled_ios_sim_launch\0' not in (temporary/'kernel.macho').read_bytes():
@@ -181,6 +182,15 @@ with tempfile.TemporaryDirectory() as directory:
                 or roots[0]['args']!=expected or config['boot']['default']!=report['default_entry']):
             raise SystemExit('Root entry/default/volume identity mismatch')
         print('Root mount entry, explicit write enable, volume identity and default selection verified')
+    if report.get('usb_blk_entries'):
+        if b'WAFFLE USBBLK: composite bulk block armed;' not in (temporary/'kernel.macho').read_bytes():
+            raise SystemExit('USB Bulk block transport missing from embedded kernel')
+        usb_test=[e for e in config['entry'] if e['id']=='usbtest']
+        usb_root=[e for e in config['entry'] if e['id']=='usbroot']
+        if (len(usb_test)!=1 or usb_test[0]['args']!=report['usb_test_args'] or
+                len(usb_root)!=1 or usb_root[0]['args']!=report['usb_root_args']):
+            raise SystemExit('USB Bulk block boot entry mismatch')
+        print('Zero-write USB Bulk host block entries verified')
     if report.get('dram_handoff'):
         blob=(temporary/'kernel.macho.adt').read_bytes()
         nodes={}

@@ -8,7 +8,7 @@ from pathlib import Path
 MARKERS = (
     b'GIULIA GPU: host preparation complete;',
     b'GIULIA GPU: firmware pack mapped read-only and digest verified',
-    b'GIULIA FB: native panel 1264x2780 full coverage;',
+    b'GIULIA FB: native panel 1440x3168 full coverage;',
     b'GiuliaGPU',
     b'GIULIA GPU: boot Gunyah resources',
     b'GIULIA GPU DEV: gunyah_owner_abi=1 current_boot_resources=1 guarded_hvc=1 fence_completion=0',

@@ -31,7 +31,7 @@ static int giulia_terminal_command(const char *cmd)
     if(gscreen_command(cmd))return 1;
     if(gs_command(cmd) || gm_command(cmd) || gr_command(cmd)) return 1;
     if (!strcmp(cmd,"info")) {
-        printf("GIULIA TERM: protocol=2 board=OnePlus-Ace-5 soc=SM8650\n%s\n",version);
+        printf("GIULIA TERM: protocol=2 board=OnePlus-12-waffle soc=SM8650\n%s\n",version);
     } else if (!strcmp(cmd,"uptime")) {
         uint64_t ns=0;
         absolutetime_to_nanoseconds(mach_absolute_time(),&ns);
@@ -66,7 +66,7 @@ static int giulia_terminal_command(const char *cmd)
         printf("GIULIA TERM: commands=help,ping,status,replay,info,uptime,memory,ps,bootargs,display,usb,ufs,features,sample\n");
         printf("GIULIA TERM: protocol=2 shell=PTY-daemon giulia_debug=%d reg=map/read/write/rmw/dump/unmap (requires giulia_mmio=1)\n",gs_enabled());
         printf("GIULIA TERM: reboot=reboot.fastboot,reboot.status (requires giulia_debug=1; sync before reset)\n");
-        printf("GIULIA TERM: screen=screen.start,screen.stop,screen.snapshot,screen.configure GSC1 RGB565_LE max_size=160..2780 max_fps=1..30 default=695,1\n");
+        printf("GIULIA TERM: screen=screen.start,screen.stop,screen.snapshot,screen.configure GSC1 RGB565_LE max_size=160..3168 max_fps=1..30 default=792,1\n");
         printf("GIULIA TERM: input=input.status,input.touch,input.key,input.button,input.release,input.keepalive coordinates=0..65535 lease_ms=3000\n");
         printf("GIULIA TERM: gpu=gpu.status,gpu.observe compiled=%u observation=explicit-read-only hardware_ready=0\n",GIULIA_GPU_INCLUDED);
         printf("GIULIA TERM: keys=keys.status compiled=%u observation=cached-no-MMIO\n",GIULIA_KEYS_INCLUDED);

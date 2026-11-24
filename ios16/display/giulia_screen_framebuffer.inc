@@ -56,4 +56,4 @@ extern "C" int giulia_screen_capture_size(uint8_t *rgb565, size_t capacity,
 
 extern "C" int giulia_screen_capture(uint8_t *rgb565, size_t capacity,
                                     unsigned *width, unsigned *height)
-{ return giulia_screen_capture_size(rgb565, capacity, width, height, 695); }
+{ return giulia_screen_capture_size(rgb565, capacity, width, height, 792); }

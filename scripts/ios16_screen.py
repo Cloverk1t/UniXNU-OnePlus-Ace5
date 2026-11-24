@@ -16,7 +16,7 @@ import zlib
 
 MAGIC = b'\0GSC1\r\n\x1a'
 HEADER = struct.Struct('<8sIIHHIIIIII')
-MAX_WIDTH, MAX_HEIGHT = 1264, 2780
+MAX_WIDTH, MAX_HEIGHT = 1440, 3168
 MAX_BYTES = MAX_WIDTH * MAX_HEIGHT * 2
 MAX_CHUNK = 1024
 SHELL_BEGIN = b'\r\nGIULIA SHELL BEGIN\r\n'
@@ -337,7 +337,7 @@ class ScreenControl:
                     self.enabled = self.settings['control'] = False
                     self._publish('Desktop control disabled')
             elif action == 'configure':
-                size = _integer(payload.get('max_size'), 160, 2780, 'Maximum size')
+                size = _integer(payload.get('max_size'), 160, 3168, 'Maximum size')
                 fps = _integer(payload.get('max_fps'), 1, 30, 'Maximum FPS')
                 commands = [f'screen.configure {size} {fps}']
                 # Drop obsolete pending changes, preserving input event order.

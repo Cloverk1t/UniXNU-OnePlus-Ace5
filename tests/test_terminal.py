@@ -183,7 +183,7 @@ class Terminal(unittest.TestCase):
             with self.subTest(cmd=cmd),self.assertRaises(ValueError):terminal.wire_command(cmd)
 
     def test_screen_and_input_wire_commands_validate_device_bounds(self):
-        valid = ('screen.configure 160 1', 'screen.configure 2780 30',
+        valid = ('screen.configure 160 1', 'screen.configure 3168 30',
                  'input.status', 'input.release', 'input.keepalive',
                  'input.touch down 0 65535', 'input.touch move 65535 0',
                  'input.touch up 32768 32768', 'input.touch cancel 0 0',
@@ -195,9 +195,9 @@ class Terminal(unittest.TestCase):
         for command in valid:
             with self.subTest(command=command):
                 self.assertEqual(terminal.wire_command(command), (command + '\n').encode('ascii'))
-        invalid = ('screen.configure 159 1', 'screen.configure 2781 1',
-                   'screen.configure 695 0', 'screen.configure 695 31',
-                   'screen.configure 695.0 1', 'screen.configure 695 1 extra',
+        invalid = ('screen.configure 159 1', 'screen.configure 3169 1',
+                   'screen.configure 792 0', 'screen.configure 792 31',
+                   'screen.configure 792.0 1', 'screen.configure 792 1 extra',
                    'input.touch tap 0 0', 'input.touch down -1 0',
                    'input.touch up 65536 0', 'input.touch move 0 0 1',
                    'input.key 3 1 0', 'input.key 232 1 0',

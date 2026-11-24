@@ -49,7 +49,7 @@ int main()
     assert(!giulia_screen_capture(NULL, frame_bytes, &width, &height));
     assert(!giulia_screen_capture(frame.data(), frame_bytes, &width, NULL));
     assert(giulia_screen_capture(frame.data(), frame_bytes, &width, &height));
-    assert(width == 316 && height == 695 && lock.locks == 1 && lock.unlocks == 1 && !lock.held);
+    assert(width == 360 && height == 792 && lock.locks == 1 && lock.unlocks == 1 && !lock.held);
     for (unsigned y = 0; y < height; y++)
         for (unsigned x = 0; x < width; x++) {
             unsigned sx = x * 4, sy = y * 4;
@@ -60,10 +60,10 @@ int main()
         }
     for (size_t i = frame_bytes; i < frame.size(); i++) assert(frame[i] == 0xa5);
     assert(!giulia_screen_capture_size(frame.data(), frame_bytes, &width, &height, 159));
-    assert(!giulia_screen_capture_size(frame.data(), frame_bytes, &width, &height, 2781));
+    assert(!giulia_screen_capture_size(frame.data(), frame_bytes, &width, &height, 3169));
     const size_t native_bytes = (size_t)GD_WIDTH * GD_HEIGHT * 2;
     std::vector<uint8_t> native(native_bytes + 32, 0xa5);
-    assert(giulia_screen_capture_size(native.data(), native_bytes, &width, &height, 2780));
+    assert(giulia_screen_capture_size(native.data(), native_bytes, &width, &height, 3168));
     assert(width == GD_WIDTH && height == GD_HEIGHT);
     for (unsigned y = 0; y < height; y++)
         for (unsigned x = 0; x < width; x++) {

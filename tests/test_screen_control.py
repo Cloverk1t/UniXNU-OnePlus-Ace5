@@ -48,7 +48,7 @@ class ScreenControl(unittest.TestCase):
             control.handle({'action': 'configure', 'max_size': 1280, 'max_fps': 10})
             self.assertIn('screen.configure 1280 10', drain(control))
             self.assertEqual(store.info['frames'], 0)
-            for payload in ({'action': 'configure', 'max_size': 2781, 'max_fps': 1},
+            for payload in ({'action': 'configure', 'max_size': 3169, 'max_fps': 1},
                             {'action': 'configure', 'max_size': 160, 'max_fps': 31},
                             {'action': 'configure', 'max_size': True, 'max_fps': 1},
                             {'action': 'command', 'command': 'reboot.fastboot'},

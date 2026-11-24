@@ -28,7 +28,7 @@ def append_pack(kernel: bytes, pack: bytes, digest: bytes, required=True):
                 'Kernel does not contain the matching native Wi-Fi driver/digest')
         require(b'GIULIA WIFI: firmware pack mapped read-only and digest verified' in kernel,
                 'Kernel does not contain the explicit firmware RAM mapping')
-        require(b'GIULIA FB: native panel 1264x2780 full coverage;' in kernel,
+        require(b'GIULIA FB: native panel 1440x3168 full coverage;' in kernel,
                 'Kernel does not contain full-panel display adaptation')
     end = 32 + size
     require(end + 72 <= len(kernel) and not any(kernel[end:end+72]), 'No zero header space for firmware segment')

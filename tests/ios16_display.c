@@ -27,5 +27,5 @@ int main(void) {
     assert(gd_touch(GD_HEIGHT-1,GD_HEIGHT)==65535 && gd_touch(0x7fffffff,GD_HEIGHT)==65535);
     for(unsigned x=1;x<GD_WIDTH;x++)assert(gd_touch(x,GD_WIDTH)>gd_touch(x-1,GD_WIDTH));
     for(unsigned y=1;y<GD_HEIGHT;y++)assert(gd_touch(y,GD_HEIGHT)>gd_touch(y-1,GD_HEIGHT));
-    free(allocation);free(input);puts("Display: all 3,513,920 native pixels, clipping, memory guards and full-panel touch verified");return 0;
+    free(allocation);free(input);puts("Display: all 4,561,920 native pixels, clipping, memory guards and full-panel touch verified");return 0;
 }

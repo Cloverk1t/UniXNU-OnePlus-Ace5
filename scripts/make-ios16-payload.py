@@ -31,6 +31,8 @@ def main():
     p.add_argument('--out',type=Path,required=True)
     p.add_argument('--root-report',type=Path,help='Include HFSX boot entry for an already prepared root')
     p.add_argument('--default-root',action='store_true')
+    p.add_argument('--root-ro',action='store_true',help='Keep the HFSX root entry read-only (vermeer_ufs_rw=0) for zero-write UFS/GPT bring-up')
+    p.add_argument('--usb-entries',action='store_true',help='Include zero-write USB Bulk host-backed selftest and HFSX root entries')
     p.add_argument('--debug-terminal',action='store_true',help='Enable root USB PTY device; requires separately staged debug daemon/shell')
     p.add_argument('--debug-mmio',action='store_true',help='Enable explicit low peripheral MMIO commands; requires --debug-terminal')
     p.add_argument('--wifi-terminal-wait',action='store_true',help='Wait for wifi.start before DMA initialization so USB captures failures')
@@ -122,7 +124,8 @@ def main():
             raise ValueError('Kernel lacks the iOS platform-launch development option')
         # The original launchd_cache_loader exposes this separate development
         # mode for its job cache when no Apple AMFI IOService is available.
-        root_args=args+f' vermeer_ufs_rw=0 vermeer_root_uuid={ident} unentitled_ios_sim_launch=1 launchd_unsecure_cache=1'
+        rw_flag='0' if a.root_ro else '1'
+        root_args=args+f' vermeer_ufs_rw={rw_flag} vermeer_root_uuid={ident} unentitled_ios_sim_launch=1 launchd_unsecure_cache=1'
         if platform_match.get('gui'):
             # The GUI driver mutes only ordinary screen text after its first
             # presentation. USB logging and panic text remain available.
@@ -154,9 +157,25 @@ def main():
         if a.audio_prepare:root_args+=' giulia_audio=1'
         if a.enable_slider:root_args+=' giulia_slider=1'
         if a.modem_mode:root_args+=' giulia_modem='+str(1 if a.modem_mode=='diagnostic' else 2)
-        config+=('[[entry]]\nid = "ios16"\ntitle = "Ace 5 iOS16 HFSX root"\ntype = "xnu"\n'
+        config+=('[[entry]]\nid = "ios16"\ntitle = "OnePlus 12 iOS16 HFSX UFS root"\ntype = "xnu"\n'
                  'path = "Payloads/kernel.macho"\nargs = '+json.dumps(root_args)+'\n')
         if a.default_root:config=config.replace('default = "xnu"','default = "ios16"')
+    if a.usb_entries:
+        if b'WAFFLE USBBLK: composite bulk block armed;' not in a.kernel.read_bytes():
+            raise ValueError('Kernel lacks waffle USB Bulk host block transport')
+        usb_test_args=args+' waffle_usbblk=1 waffle_usbblk_test=1'
+        config+=('[[entry]]\nid = "usbtest"\ntitle = "OnePlus 12 USB Bulk selftest (zero-write)"\ntype = "xnu"\n'
+                 'path = "Payloads/kernel.macho"\nargs = '+json.dumps(usb_test_args)+'\n')
+        usb_root_args=(args.replace('rd=vermeerufs0','rd=waffleusb0')
+                       +' waffle_usbblk=1 waffle_usbblk_rw=1 unentitled_ios_sim_launch=1 launchd_unsecure_cache=1')
+        if a.root_report:
+            usb_root_args+=' vermeer_root_uuid='+ident
+        if platform_match.get('gui'):
+            usb_root_args+=' sweetfb_hz=30 sweetfb_noconsole=1'
+        if a.enable_touch:usb_root_args+=' giulia_touch=1'
+        if a.touch_gpio:usb_root_args+=' giulia_touch_gpio=1'
+        config+=('[[entry]]\nid = "usbroot"\ntitle = "OnePlus 12 iOS16 USB host root (zero-write)"\ntype = "xnu"\n'
+                 'path = "Payloads/kernel.macho"\nargs = '+json.dumps(usb_root_args)+'\n')
     for e in tomllib.loads(config)['entry']:
         if len(e['args'].encode('ascii'))>=608:raise ValueError('Boot line too long')
     a.out.mkdir(parents=True)
@@ -181,7 +200,8 @@ def main():
             'wifi_terminal_wait':a.wifi_terminal_wait}
     if a.root_report:
         result.update(root_sha256=root['sha256'],root_finder_id=ident,default_entry='ios16' if a.default_root else 'xnu',
-                      root_kernel_args=root_args,ios_platform_launch_compat=True,launchd_job_cache_compat=True,
+                      root_kernel_args=root_args,root_readonly=a.root_ro,
+                      ios_platform_launch_compat=True,launchd_job_cache_compat=True,
                       purpose='iOS16 HFSX root mount and UFS/USB diagnostic entries; use after manual userdata flash')
         if a.trace_services:
             result['trace_services']=True
@@ -197,6 +217,10 @@ def main():
         if a.enable_slider:
             result['physical_slider_worker']=True
             result['hall_prepare_handoff']=True
+    if a.usb_entries:
+        result['usb_blk_entries']=True
+        result['usb_test_args']=usb_test_args
+        result['usb_root_args']=usb_root_args
     if catalog:
         result['trust_catalog']={k:catalog[k] for k in ('sha256','bytes','build','source_ipsw_sha256','unique_hashes')}
     if wifi:result['wifi_bringup']=wifi

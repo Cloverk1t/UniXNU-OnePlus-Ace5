@@ -79,8 +79,8 @@ def main():
     cpus=next(n for n in tree.children if n.name=='cpus')
     props(cpus.children[0],{'compatible':b'qcom,kryo\0ARM,v8\0'})
     fb=next(n for n in tree.children if n.name=='sweet-fbcon')
-    props(fb,{'reg':struct.pack('<QQ',0xd5100000,5056*2780),
-              'width':struct.pack('<I',1264),'height':struct.pack('<I',2780),'stride':struct.pack('<I',5056)})
+    props(fb,{'reg':struct.pack('<QQ',0xd5100000,5760*3168),
+              'width':struct.pack('<I',1440),'height':struct.pack('<I',3168),'stride':struct.pack('<I',5760)})
     blob=adt.serialize(tree)
     check,used=adt.parse(blob)
     assert used==len(blob) and check.name=='device-tree'

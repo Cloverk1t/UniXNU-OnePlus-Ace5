@@ -11,8 +11,8 @@
 #include <stdint.h>
 
 #define GT_CONTACTS 10
-#define GT_WIDTH 1264
-#define GT_HEIGHT 2780
+#define GT_WIDTH 1440
+#define GT_HEIGHT 3168
 #define GT_MASK ((1U << GT_CONTACTS)-1)
 
 /* Count8; for each active object: index8, classification8, X16, Y16. */
