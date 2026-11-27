@@ -204,6 +204,57 @@ def main():
             text=text.replace('y > 3199 ? 3199','y > 3167 ? 3167')
             text=text.replace('K70 framebuffer','OnePlus 12 framebuffer').replace('K70 panel','OnePlus 12 panel')
         path.write_text(text,errors='surrogateescape')
+    # OnePlus 12 (waffle) 1440x3168x4 framebuffer (17.4 MiB) at 0xd5100000..0xd6267000
+    # crosses the 32 MiB ARM64 16K-granule L2 block boundary at 0xd6000000.
+    # Map TWO contiguous 32 MiB L2 blocks (0xd4000000..0xd7ffffff) in both start.s (TTBR0)
+    # and arm_vm_init.c (TTBR1), and preserve the +0x01100000 in-block offset on relocate.
+    early0 = a.out / '0010-sweet-early-framebuffer-debug.patch'
+    edit(early0, '@@ -609,6 +628,23 @@ Lkernelcache_base_found:',
+         '@@ -609,6 +628,27 @@ Lkernelcache_base_found:')
+    edit(early0,
+         '+\tMOV64\tx10, 0xd5100000\n'
+         '+\tMOV64\tx11, (ARM_TTE_TYPE_BLOCK | ARM_TTE_VALID | ARM_TTE_BLOCK_SH(SH_OUTER_MEMORY) | ARM_TTE_BLOCK_ATTRINDX(CACHE_ATTRINDX_WRITECOMB) | ARM_TTE_BLOCK_AF | ARM_TTE_BLOCK_PNX | ARM_TTE_BLOCK_NX)\n'
+         '+\torr\t\tx11, x11, x10\n'
+         '+\tand\t\tx12, x10, #(ARM_TT_L2_INDEX_MASK)\n'
+         '+\tlsr\t\tx12, x12, #(ARM_TT_L2_SHIFT)\n'
+         '+\tadd\t\tx13, x25, #(2 * PGBYTES)\n'
+         '+\tstr\t\tx11, [x13, x12, lsl #TTE_SHIFT]',
+         '+\tMOV64\tx10, 0xd4000000\n'
+         '+\tMOV64\tx11, (ARM_TTE_TYPE_BLOCK | ARM_TTE_VALID | ARM_TTE_BLOCK_SH(SH_OUTER_MEMORY) | ARM_TTE_BLOCK_ATTRINDX(CACHE_ATTRINDX_WRITECOMB) | ARM_TTE_BLOCK_AF | ARM_TTE_BLOCK_PNX | ARM_TTE_BLOCK_NX)\n'
+         '+\torr\t\tx11, x11, x10\n'
+         '+\tand\t\tx12, x10, #(ARM_TT_L2_INDEX_MASK)\n'
+         '+\tlsr\t\tx12, x12, #(ARM_TT_L2_SHIFT)\n'
+         '+\tadd\t\tx13, x25, #(2 * PGBYTES)\n'
+         '+\tstr\t\tx11, [x13, x12, lsl #TTE_SHIFT]\n'
+         '+\tmov\t\tx10, #(1 << ARM_TT_L2_SHIFT)\n'
+         '+\tadd\t\tx11, x11, x10\n'
+         '+\tadd\t\tx12, x12, #1\n'
+         '+\tstr\t\tx11, [x13, x12, lsl #TTE_SHIFT]')
+    early1 = a.out / '0012-sweet-keep-debug-console-after-ttbr0.patch'
+    edit(early1,
+         '+\tassert(va + ARM_TT_L2_SIZE <= gVirtBase);\n'
+         '+\ttt_entry_t l1 = cpu_tte[(va & ARM_TT_L1_INDEX_MASK) >> ARM_TT_L1_SHIFT];\n'
+         '+\tassert((l1 & (ARM_TTE_VALID | ARM_TTE_TYPE_MASK)) == (ARM_TTE_VALID | ARM_TTE_TYPE_TABLE));\n'
+         '+\ttt_entry_t *l2 = (tt_entry_t *)phystokv(l1 & ARM_TTE_TABLE_MASK);\n'
+         '+\ttt_entry_t *slot = &l2[(va & ARM_TT_L2_INDEX_MASK) >> ARM_TT_L2_SHIFT];\n'
+         '+\tassert(*slot == ARM_TTE_EMPTY);\n'
+         '+\t*slot = 0xd5100000ULL | ARM_TTE_VALID | ARM_TTE_TYPE_BLOCK |\n'
+         '+\t    ARM_TTE_BLOCK_SH(SH_OUTER_MEMORY) |\n'
+         '+\t    ARM_TTE_BLOCK_ATTRINDX(CACHE_ATTRINDX_WRITECOMB) |\n'
+         '+\t    ARM_TTE_BLOCK_AF | ARM_TTE_BLOCK_PNX | ARM_TTE_BLOCK_NX;',
+         '+\tassert(va + 2 * ARM_TT_L2_SIZE <= gVirtBase);\n'
+         '+\ttt_entry_t l1 = cpu_tte[(va & ARM_TT_L1_INDEX_MASK) >> ARM_TT_L1_SHIFT];\n'
+         '+\tassert((l1 & (ARM_TTE_VALID | ARM_TTE_TYPE_MASK)) == (ARM_TTE_VALID | ARM_TTE_TYPE_TABLE));\n'
+         '+\ttt_entry_t *l2 = (tt_entry_t *)phystokv(l1 & ARM_TTE_TABLE_MASK);\n'
+         '+\ttt_entry_t *slot = &l2[(va & ARM_TT_L2_INDEX_MASK) >> ARM_TT_L2_SHIFT];\n'
+         '+\tassert(slot[0] == ARM_TTE_EMPTY && slot[1] == ARM_TTE_EMPTY);\n'
+         '+\tconst tt_entry_t attr = ARM_TTE_VALID | ARM_TTE_TYPE_BLOCK | ARM_TTE_BLOCK_SH(SH_OUTER_MEMORY) |\n'
+         '+\t    ARM_TTE_BLOCK_ATTRINDX(CACHE_ATTRINDX_WRITECOMB) | ARM_TTE_BLOCK_AF | ARM_TTE_BLOCK_PNX | ARM_TTE_BLOCK_NX;\n'
+         '+\tslot[0] = 0xd4000000ULL | attr;\n'
+         '+\tslot[1] = (0xd4000000ULL + ARM_TT_L2_SIZE) | attr;')
+    edit(early1,
+         '+\tsweet_early_relocate(SWEET_EARLY_FB_VA);',
+         '+\tsweet_early_relocate(SWEET_EARLY_FB_VA + (0xd5100000ULL - 0xd4000000ULL));')
     # Shared ARM cache-attribute path, used by both Wi-Fi and display buffers.
     # Ace 5 RAM lives above 4 GiB: widen ppnum_t before the physical-page shift.
     cache_patch='0081-giulia-pmap-high-physical-cache-sync.patch'
